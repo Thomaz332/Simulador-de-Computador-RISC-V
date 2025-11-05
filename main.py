@@ -1,4 +1,5 @@
 from memory import Memory
+from cpu import CPU
 
 mem = Memory(1024) 
 

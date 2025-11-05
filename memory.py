@@ -1,16 +1,33 @@
 class Memory:
-    def __init__(self, size: int):
-        # cria um vetor de bytes com o tamanho especificado
-        self.data = [0] * size
+    def __init__(self, matrizMemoria,size: int):       
+            self.matrizMemoria = matrizMemoria[32]
 
+            # RAM Principal
+            for endereco in range(0x00000, 0x80000):
+                self.matrizMemoria[f"0x{endereco:05X}"] = "RAM Principal (Programa, Dados, Pilha, Heap)"
+
+            # VRAM
+            for endereco in range(0x80000, 0x90000):
+                self.matrizMemoria[f"0x{endereco:05X}"] = "VRAM (Vídeo RAM)"
+
+            # Área Reservada
+            for endereco in range(0x90000, 0x9FC00):
+                self.matrizMemoria[f"0x{endereco:05X}"] = "Área Reservada para Expansão Futura"
+
+            # Periféricos
+            for endereco in range(0x9FC00, 0xA0000):
+                self.matrizMemoria[f"0x{endereco:05X}"] = "Periféricos de Hardware (E/S Mapeada)"
+
+            self.data = [0] * size
+    
+    #Le um byte
     def read8(self, address: int) -> int:
-        """Lê 1 byte da memória"""
         if address < 0 or address >= len(self.data):
             raise IndexError("Read8: endereço fora da memória")
         return self.data[address]
 
+    #Le 4 byte
     def read32(self, address: int) -> int:
-        """Lê 4 bytes (32 bits) e monta um inteiro"""
         if address + 3 >= len(self.data):
             raise IndexError("Read32: endereço fora da memória")
 
@@ -23,13 +40,11 @@ class Memory:
         )
 
     def write8(self, address: int, value: int):
-        """Escreve 1 byte"""
         if address < 0 or address >= len(self.data):
             raise IndexError("Write8: endereço fora da memória")
         self.data[address] = value & 0xFF  # garante 8 bits
 
     def write32(self, address: int, value: int):
-        """Escreve 4 bytes (32 bits)"""
         if address + 3 >= len(self.data):
             raise IndexError("Write32: endereço fora da memória")
 
