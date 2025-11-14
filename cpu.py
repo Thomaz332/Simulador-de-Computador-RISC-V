@@ -25,17 +25,51 @@ class CPU:
         rs1 = (instr >> 15) & 0x1F        # bits [19:15]
         rs2 = (instr >> 20) & 0x1F        # bits [24:20]
         funct7 = (instr >> 25) & 0x7F     # bits [31:25]
-        imm = (instr >> 20) & 0xFFF       # usado em I-type
+        imm_i = (instr >> 20) & 0xFFF       # usado em I-type
 
         # extensão de sinal do imediato
-        if imm & 0x800:
-            imm |= 0xFFFFF000
+        if imm_i & 0x800:
+            imm_i |= 0xFFFFF000
+        imm_i = imm_i & 0xFFFFFFFF
+
+        # ========== Load (I-type) ==========
+        # opcode 0x03 -> loads (LW, LB, LBU etc.). Implementamos LW (funct3 == 0x2)
+        if opcode == 0x03:
+            if funct3 == 0x2: # LW
+                addr = (self.regs[rs1] + imm_i) & 0xFFFFFFFF
+                if addr % 4 != 0:
+                    print(f"[WARN] LW em endereço não alinhado: 0x{addr:08X}")
+                val = self.bus.read(addr)
+                self.regs[rd] = val & 0xFFFFFFFF
+                print(f"LW x{rd}, {imm_i}(x{rs1}) -> x{rd}={self.regs[rd]} (addr=0x{addr:08X})")
+            else:
+                print(f"[WARN] LOAD desconhecido funct3={funct3}")
+
+        # ========== STORE (S-type) =========
+        # opcode 0x23 -> stores (SW etc...)
+        elif opcode == 0x23:
+            # S-type immediate: bits [11:5] = instr[31:25], bits [4:0] = instr[11:7]
+            imm_s = ((instr >> 7) & 0x1F) | ((instr >> 25) << 5)
+            # extensão de sinal (12 bits)
+            if imm_s & 0x800:
+                imm_s |= 0xFFFFF000
+            imm_s = imm_s & 0xFFFFFFFF
+
+            if funct3 == 0x2: #SW
+                addr = (self.regs[rs1] + imm_s) & 0xFFFFFFFF
+                if addr % 4 != 0:
+                    print(f"[WARN] SW em endereço não alinhado: 0x{addr:08X}")
+                value = self.regs[rs2] & 0xFFFFFFFF
+                self.bus.write(addr, value)
+                print(f"SW x{rs2} ({value}) -> {imm_s}(x{rs1}) (addr=0x{addr:08X})")
+            else:
+                print(f"[WARN] STORE desconhecido funct3={funct3}")
 
         # ========== I-TYPE ==========
         #usa um registrador e um número constante (imediato)
-        if opcode == 0x13 and funct3 == 0x0:   # ADDI
-            self.regs[rd] = (self.regs[rs1] + imm) & 0xFFFFFFFF
-            print(f"ADDI x{rd}, x{rs1}, {imm} → x{rd}={self.regs[rd]}")
+        elif opcode == 0x13 and funct3 == 0x0:   # ADDI
+            self.regs[rd] = (self.regs[rs1] + (imm_i & 0xFFFFFFFF)) & 0xFFFFFFFF
+            print(f"ADDI x{rd}, x{rs1}, {imm_i} → x{rd}={self.regs[rd]}")
 
         # ========== R-TYPE ==========
         #Usa dois registradores de entrada e um de saída
