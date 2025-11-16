@@ -1,20 +1,31 @@
 class Io:
     def __init__(self):
-        # vamos simular uma pequena área de vídeo (VRAM)
-        self.vram_start = 0x80000
-        self.vram_end = 0x8FFFF
-        self.vram = [0] * (self.vram_end - self.vram_start + 1)
+        # VRAM = 64 KB (0x80000–0x8FFFF)
+        self.VRAM_START = 0x80000
+        self.VRAM_END   = 0x8FFFF
+        
+        size = self.VRAM_END - self.VRAM_START + 1
+        self.vram = [0] * size
 
     def write(self, address: int, value: int):
-        """Escreve na área de IO (por enquanto, só VRAM e terminal)"""
-        if self.vram_start <= address <= self.vram_end:
-            self.vram[address - self.vram_start] = value & 0xFF
-        elif address == 0x9FC00:
-            # escreve caractere no terminal (simula saída)
-            print(chr(value & 0xFF), end='')
+        # ---- VRAM ----
+        if self.VRAM_START <= address <= self.VRAM_END:
+            index = address - self.VRAM_START
+            self.vram[index] = value & 0xFF
+            return
+
+        # ---- Terminal ----
+        if address == 0x9FC00:
+            print(chr(value & 0xFF), end="")
+            return
+
+        # ---- OUTROS FUTUROS ----
+        # teclado, som, timer, etc.
 
     def read(self, address: int):
-        """Lê valor da área de IO"""
-        if self.vram_start <= address <= self.vram_end:
-            return self.vram[address - self.vram_start]
+        # ---- VRAM ----
+        if self.VRAM_START <= address <= self.VRAM_END:
+            return self.vram[address - self.VRAM_START]
+
+        # ---- OUTROS ----
         return 0

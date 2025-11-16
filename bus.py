@@ -2,24 +2,24 @@ from memory import Memory
 from io_device import Io
 
 class Bus:
-    def __init__(self, memory: Memory, io_dev: Io):
+    def __init__(self, memory: Memory, io: Io):
         self.memory = memory
-        self.io = io_dev
+        self.io = io
 
-    def read(self, address: int):
-        """Lê da memória ou IO dependendo do endereço"""
-        #endereço < 0x80000	= Memória RAM	
-        #endereço ≥ 0x80000	= IO (entrada/saída)
-        if address >= 0x80000:
-            return self.io.read(address)
-        else:
-            return self.memory.read32(address)
+    def read(self, addr):
+        return self.memory.read32(addr)
 
-    def write(self, address: int, value: int):
-        """Escreve na memória ou IO dependendo do endereço"""
-        #endereço < 0x80000	= Memória RAM	
-        #endereço ≥ 0x80000	= IO (entrada/saída)
-        if address >= 0x80000:
-            self.io.write(address, value)
-        else:
-            self.memory.write32(address, value)
+    def write(self, addr, value):
+        self.memory.write32(addr, value)
+
+    def read8(self, addr):
+        return self.memory.read8(addr)
+
+    def read16(self, addr):
+        return self.memory.read16(addr)
+
+    def write8(self, addr, value):
+        self.memory.write8(addr, value)
+
+    def write16(self, addr, value):
+        self.memory.write16(addr, value)
