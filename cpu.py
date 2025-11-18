@@ -1,5 +1,12 @@
 from bus import Bus
 
+def to_u32(x):
+        return x & 0xFFFFFFFF
+    
+def to_s32(x):
+    x = x & 0xFFFFFFFF
+    return x if x < 0x80000000 else x - 0x100000000
+
 class CPU:
     def __init__(self, bus: Bus):
         self.bus = bus
@@ -25,7 +32,6 @@ class CPU:
         if self.instr_count == 50:
             self.dump_vram_to_terminal()
 
-
     # =================================================================
     # DECODIFICAÇÃO COMPLETA RV32I
     # =================================================================
@@ -38,16 +44,17 @@ class CPU:
         rs2    = (instr >> 20) & 0x1F
         funct7 = (instr >> 25)
 
-        pc_next = self.pc + 4
+        pc_next = to_u32(self.pc + 4)
         imm_i = (instr >> 20) & 0xFFF
         if imm_i & 0x800:
-            imm_i |= 0xFFFFF000
+            imm_i -= 0x1000
 
         # ================================================================
         # LUI
         # ================================================================
         if opcode == 0x37:
-            self.regs[rd] = instr & 0xFFFFF000
+            imm_u = instr & 0xFFFFF000
+            self.regs[rd] = to_u32(imm_u)
             self.pc = pc_next
             return
 
@@ -55,7 +62,8 @@ class CPU:
         # AUIPC
         # ================================================================
         if opcode == 0x17:
-            self.regs[rd] = (self.pc + (instr & 0xFFFFF000)) & 0xFFFFFFFF
+            imm_u = instr & 0xFFFFF000
+            self.regs[rd] = to_u32(self.pc + imm_u)
             self.pc = pc_next
             return
 
@@ -64,13 +72,15 @@ class CPU:
         # ================================================================
         if opcode == 0x6F:
             imm = (
+                ((instr >> 31) & 1) << 20 |
                 ((instr >> 21) & 0x3FF) << 1 |
                 ((instr >> 20) & 1) << 11 |
-                ((instr >> 12) & 0xFF) << 12 |
-                (instr >> 31) << 20
+                ((instr >> 12) & 0xFF) << 12    
             )
+
+            # Sign extend 21 bits   
             if imm & (1 << 20):
-                imm |= 0xFFF00000
+                imm -= (1 << 21)
 
             self.regs[rd] = pc_next
             self.pc = (self.pc + imm) & 0xFFFFFFFF
@@ -81,7 +91,7 @@ class CPU:
         # ================================================================
         if opcode == 0x67:
             self.regs[rd] = pc_next
-            target = (self.regs[rs1] + imm_i) & ~1
+            target = to_u32(self.regs[rs1] + imm_i) & ~1
             self.pc = target
             return
 
@@ -89,24 +99,29 @@ class CPU:
         # BRANCHES (BEQ, BNE, BLT, BGE, BLTU, BGEU)
         # ================================================================
         if opcode == 0x63:
-            imm = ((instr >> 31) << 12) | \
-                  (((instr >> 7) & 1) << 11) | \
-                  (((instr >> 25) & 0x3F) << 5) | \
-                  (((instr >> 8) & 0xF) << 1)
+            # Monta imediato B-type (signed)
+            imm = (
+                  ((instr >> 31) & 0x1) << 12 |
+                  ((instr >> 7)  & 0x1) << 11 |
+                  ((instr >> 25) & 0x3F) << 5 |
+                  ((instr >> 8)  & 0xF) << 1
+            )
 
-            if imm & 0x1000:
-                imm |= 0xFFFFE000
+            if imm & (1 << 12):
+                imm |= ~((1 << 13) - 1)
 
             x = self.regs[rs1]
             y = self.regs[rs2]
+            xu = self.regs[rs1] & 0xFFFFFFFF
+            yu = self.regs[rs2] & 0xFFFFFFFF
 
             take = False
-            if   funct3 == 0x0: take = (x == y) # BEQ
-            elif funct3 == 0x1: take = (x != y) # BNE
-            elif funct3 == 0x4: take = (int(x) < int(y)) # BLT
-            elif funct3 == 0x5: take = (int(x) >= int(y)) # BGE
-            elif funct3 == 0x6: take = (x & 0xFFFFFFFF) < (y & 0xFFFFFFFF) # BLTU
-            elif funct3 == 0x7: take = (x & 0xFFFFFFFF) >= (y & 0xFFFFFFFF) # BGEU
+            if   funct3 == 0x0: take = (x == y)              # BEQ (signed/non depende)
+            elif funct3 == 0x1: take = (x != y)              # BNE
+            elif funct3 == 0x4: take = (x < y)               # BLT (signed)
+            elif funct3 == 0x5: take = (x >= y)              # BGE (signed)
+            elif funct3 == 0x6: take = (xu < yu)             # BLTU (unsigned)
+            elif funct3 == 0x7: take = (xu >= yu)            # BGEU (unsigned)
 
             self.pc = (self.pc + imm) if take else pc_next
             return
@@ -115,7 +130,7 @@ class CPU:
         # LOADS (LB, LH, LW, LBU, LHU)
         # ================================================================
         if opcode == 0x03:
-            addr = (self.regs[rs1] + imm_i) & 0xFFFFFFFF
+            addr = to_u32(self.regs[rs1] + imm_i)
 
             if funct3 == 0x0: # LB
                 v = self.bus.read8(addr)
@@ -134,7 +149,7 @@ class CPU:
                 print(f"[WARN] LOAD funct3={funct3}")
 
             self.regs[rd] = v & 0xFFFFFFFF
-            self.pc = pc_next
+            pc_next = to_u32(self.pc + 4)
             return
 
         # ================================================================
@@ -146,15 +161,15 @@ class CPU:
                 imm |= 0xFFFFF000
             imm &= 0xFFFFFFFF
 
-            addr = (self.regs[rs1] + imm) & 0xFFFFFFFF
-            val  = self.regs[rs2]
+            addr = to_u32(self.regs[rs1] + to_s32(imm))
+            val  = to_u32(self.regs[rs2])
 
             if   funct3 == 0x0: self.bus.write8(addr, val)
             elif funct3 == 0x1: self.bus.write16(addr, val)
             elif funct3 == 0x2: self.bus.write(addr, val)
             else: print(f"[WARN] STORE funct3={funct3}")
 
-            self.pc = pc_next
+            pc_next = to_u32(self.pc + 4)
             return
 
         # ================================================================
@@ -181,17 +196,17 @@ class CPU:
                 self.regs[rd] = self.regs[rs1] & imm_i
 
             elif funct3 == 0x1: # SLLI
-                sh = rs2
+                sh = (instr >> 20) & 0x1F # shamt = bits 20–24
                 self.regs[rd] = (self.regs[rs1] << sh) & 0xFFFFFFFF
 
             elif funct3 == 0x5:
-                sh = rs2
+                sh = (instr >> 20) & 0x1F # shamt = bits 20–24
                 if funct7 == 0x00: # SRLI
                     self.regs[rd] = (self.regs[rs1] >> sh) & 0xFFFFFFFF
                 else: # SRAI
-                    self.regs[rd] = (int(self.regs[rs1]) >> sh) & 0xFFFFFFFF
+                    self.regs[rd] = (int(self.regs[rs1]) >> sh) & 0xFFFFFFFF # aritmético: preservar sinal
 
-            self.pc = pc_next
+            pc_next = to_u32(self.pc + 4)
             return
 
         # ================================================================
@@ -214,7 +229,7 @@ class CPU:
             elif funct3 == 0x6: self.regs[rd] = a | b
             elif funct3 == 0x7: self.regs[rd] = a & b
 
-            self.pc = pc_next
+            pc_next = to_u32(self.pc + 4)
             return
 
         print(f"[WARN] Instrução desconhecida 0x{instr:08X}")
