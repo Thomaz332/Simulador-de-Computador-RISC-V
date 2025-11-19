@@ -13,7 +13,7 @@ class Io:
             index = address - self.VRAM_START
             self.vram[index] = value & 0xFF
             return
-
+        
         # ---- Terminal ----
         if address == 0x9FC00:
             print(chr(value & 0xFF), end="")
@@ -29,3 +29,4 @@ class Io:
 
         # ---- OUTROS ----
         return 0
+    

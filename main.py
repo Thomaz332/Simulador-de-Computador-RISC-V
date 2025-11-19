@@ -9,33 +9,9 @@ io = Io()
 bus = Bus(mem, io)
 cpu = CPU(bus)
 
+palavara = 1
 
-VRAM_BASE = 0x80000
-
-
-upper = (VRAM_BASE >> 12) & 0xFFFFF
-mem.write32(0,  (upper << 12) | (5 << 7) | 0x37) 
-
-pc = 4
-for i, b in enumerate(msg):
-   
-    instr_addi = (b << 20) | (0 << 15) | (6 << 7) | (0x13)
-    mem.write32(pc, instr_addi)
-    pc += 4
-
-    imm11_5 = (i >> 5) & 0x7F
-    imm4_0  = i & 0x1F
-    instr_sb = (imm11_5 << 25) | (6 << 20) | (5 << 15) | (0x0 << 12) | (imm4_0 << 7) | 0x23
-    mem.write32(pc, instr_sb)
-    pc += 4
-
-mem.write32(pc, 0x0000006F)
-
-print("Executando...\n")
-
-# Rode bastante instruções — o dump aparecerá automático
-for _ in range(50):
-    cpu.step()
+cpu.write_terminal(0x9FC00,palavara)
 
 """
 # TESTE DAS OPERAÇÕES
