@@ -9,9 +9,12 @@ io = Io()
 bus = Bus(mem, io)
 cpu = CPU(bus)
 
-palavara = 1
+# TESTE DE TERMINAL
+msg = "HELLO WORLD!\n"
 
-cpu.write_terminal(0x9FC00,palavara)
+for i, c in enumerate(msg):
+    bus.write8(0x1000 + i, ord(c))
+bus.write8(0x1000 + len(msg), 0) 
 
 """
 # TESTE DAS OPERAÇÕES

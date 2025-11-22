@@ -22,6 +22,16 @@ class CPU:
 
         self.instr_count += 1
 
+        # Imprimir VRAM
+        if self.instr_count % 10 == 0:
+            ptr = 0x1000
+            while True:
+                b = self.bus.read8(ptr)
+                if b == 0:
+                    break
+                self.bus.write8(0x9FC00, b)
+                ptr += 1
+
     # =================================================================
     # DECODIFICAÇÃO COMPLETA RV32I
     # =================================================================
@@ -145,9 +155,15 @@ class CPU:
             addr = (self.regs[rs1] + imm) & 0xFFFFFFFF
             val  = self.regs[rs2]
 
-            if   funct3 == 0x0: self.bus.write8(addr, val)
-            elif funct3 == 0x1: self.bus.write16(addr, val)
-            elif funct3 == 0x2: self.bus.write(addr, val)
+            if funct3 == 0x0: 
+                self.bus.write8(addr, val) # SB
+
+            elif funct3 == 0x1: 
+                self.bus.write16(addr, val) # SH
+
+            elif funct3 == 0x2: 
+                self.bus.write(addr, val) # SW
+
             else: print(f"[WARN] STORE funct3={funct3}")
 
             self.pc = pc_next
@@ -198,17 +214,34 @@ class CPU:
             b = self.regs[rs2]
 
             if funct3 == 0x0: 
-                if funct7 == 0x00: self.regs[rd] = (a + b) & 0xFFFFFFFF 
-                else:              self.regs[rd] = (a - b) & 0xFFFFFFFF 
-            elif funct3 == 0x1: self.regs[rd] = (a << (b & 0x1F)) & 0xFFFFFFFF 
-            elif funct3 == 0x2: self.regs[rd] = 1 if int(a) < int(b) else 0 
-            elif funct3 == 0x3: self.regs[rd] = 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0 
-            elif funct3 == 0x4: self.regs[rd] = a ^ b 
+                if funct7 == 0x00: 
+                    self.regs[rd] = (a + b) & 0xFFFFFFFF # ADD
+                else:              
+                    self.regs[rd] = (a - b) & 0xFFFFFFFF # SUB
+
+            elif funct3 == 0x1: 
+                self.regs[rd] = (a << (b & 0x1F)) & 0xFFFFFFFF # SLL
+
+            elif funct3 == 0x2: 
+                self.regs[rd] = 1 if int(a) < int(b) else 0 # SLT
+
+            elif funct3 == 0x3: 
+                self.regs[rd] = 1 if (a & 0xFFFFFFFF) < (b & 0xFFFFFFFF) else 0 # SLTU
+
+            elif funct3 == 0x4: 
+                self.regs[rd] = a ^ b # XOR
+
             elif funct3 == 0x5: 
-                if funct7 == 0x00: self.regs[rd] = (a >> (b & 0x1F)) & 0xFFFFFFFF
-                else:              self.regs[rd] = (int(a) >> (b & 0x1F)) & 0xFFFFFFFF
-            elif funct3 == 0x6: self.regs[rd] = a | b
-            elif funct3 == 0x7: self.regs[rd] = a & b
+                if funct7 == 0x00: 
+                    self.regs[rd] = (a >> (b & 0x1F)) & 0xFFFFFFFF # SRL
+                else:              
+                    self.regs[rd] = (int(a) >> (b & 0x1F)) & 0xFFFFFFFF # SRA
+
+            elif funct3 == 0x6: 
+                self.regs[rd] = a | b # OR
+
+            elif funct3 == 0x7: 
+                self.regs[rd] = a & b # AND
 
             self.pc = pc_next
             return

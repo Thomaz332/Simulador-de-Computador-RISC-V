@@ -11,9 +11,6 @@ class Bus:
 
     def write(self, addr, value):
         self.memory.write32(addr, value)
-    
-    def write(self, addr, value):
-        self.io.write(addr, value)
 
     def read8(self, addr):
         return self.memory.read8(addr)
