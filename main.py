@@ -16,7 +16,7 @@ for i, c in enumerate(msg):
     bus.write8(0x1000 + i, ord(c))
 bus.write8(0x1000 + len(msg), 0) 
 
-"""
+
 # TESTE DAS OPERAÇÕES
 
 cpu.regs[1] = 10       # x1 = 10
@@ -45,7 +45,7 @@ mem.write32(48, 0x00A0F713)  # ANDI
 
 # LOAD e STORE
 mem.write32(52, 0x0050A023)  # SW
-mem.write32(56, 0x0000A283)  # LW 
+mem.write32(56, 0x0000A183)  # LW 
 
 # Executa as instruções
 for _ in range(15):

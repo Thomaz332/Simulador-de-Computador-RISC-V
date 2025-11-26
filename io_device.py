@@ -9,5 +9,5 @@ class Io:
         print(f"[WARN] IO write desconhecido: {address:08X}")
 
     def read(self, address: int):
-        # No seu caso, terminal não tem read.
+        
         return 0
