@@ -24,7 +24,7 @@ class CPU:
 
         # Imprimir VRAM
         if self.instr_count % 10 == 0:
-            ptr = 0x1000
+            ptr = 0x80000
             while True:
                 b = self.bus.read8(ptr)
                 if b == 0:
@@ -245,7 +245,8 @@ class CPU:
 
             self.pc = pc_next
             return
-
+        
+        self.pc = pc_next
         print(f"[WARN] Instrução desconhecida 0x{instr:08X}")
 
     def write_terminal(self, addr, value):

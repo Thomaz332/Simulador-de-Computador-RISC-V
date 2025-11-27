@@ -3,71 +3,185 @@ from io_device import Io
 from bus import Bus
 from cpu import CPU
 
-# Inicialização dos dispositivos
-mem = Memory()
-io = Io()
-bus = Bus(mem, io)
+mem = Memory(); 
+io = Io(); 
+bus = Bus(mem, io); 
 cpu = CPU(bus)
 
-# TESTE DE TERMINAL
-msg = "HELLO WORLD!\n"
+cpu.regs[1] = 20
+cpu.regs[2] = 10
 
-for i, c in enumerate(msg):
-    bus.write8(0x1000 + i, ord(c))
-bus.write8(0x1000 + len(msg), 0) 
+# Print terminal
+#msg = "HELLO WORLD!\n"
+
+#for i, c in enumerate(msg):
+#    bus.write8(0x80000 + i, ord(c))
+#bus.write8(0x80000 + len(msg), 0) 
+#for i in range(10):
+#    cpu.step()
+
+# ===============================
+# R-TYPE
+# ===============================
+
+# ADD esperado 30
+#mem.write32(0,  0x002081B3)
+#cpu.step()
+#print(f"x3  (ADD)   = {cpu.regs[3]}")
+
+# SUB esperado 10
+#mem.write32(0,0x40208233)  
+#cpu.step()
+#print(f"x4  (SUB)   = {cpu.regs[4]}")
+
+# AND esperado 0
+#mem.write32(0,0x0020F2B3)
+#cpu.step()
+#print(f"x5  (AND)   = {cpu.regs[5]}")
+
+# OR esperado 30
+#mem.write32(0, 0x0020E333)
+#cpu.step()
+#print(f"x6  (OR)    = {cpu.regs[6]}")
+
+# XOR esperado 30
+#mem.write32(0, 0x0020C3B3)
+#cpu.step()
+#print(f"x7  (XOR)   = {cpu.regs[7]}")
+
+# SLT esperado 0
+#mem.write32(0, 0x0020A533)
+#cpu.step()
+#print(f"x10 (SLT)   = {cpu.regs[10]}")
+
+# SLTU esperado 0
+#mem.write32(0, 0x0020B5B3) 
+#cpu.step()
+#print(f"x12 (SLTU)  = {cpu.regs[12]}") 
 
 
-# TESTE DAS OPERAÇÕES
+# ===============================
+# I-TYPE (ALU)
+# ===============================
 
-cpu.regs[1] = 10       # x1 = 10
-cpu.regs[2] = 20       # x2 = 20
+# ADDI esperado 25
+#mem.write32(0, 0x00508593)
+#cpu.step()
+#print(f"x11 (ADDI)  = {cpu.regs[11]}")
 
-# R-type
-mem.write32(0,  0x002081B3)  # ADD 
-mem.write32(4,  0x40208233)  # SUB
-mem.write32(8,  0x0020F2B3)  # AND
-mem.write32(12, 0x0020E333)  # OR
-mem.write32(16, 0x0020C3B3)  # XOR
+# ANDI esperado 4
+#mem.write32(0, 0x0050F613)
+#cpu.step()
+#print(f"x12 (ANDI)  = {cpu.regs[12]}")
 
-# SHIFTs
-mem.write32(20, 0x002093B3)  # SLL
-mem.write32(24, 0x0020D433)  # SRL
-mem.write32(28, 0x4020D4B3)  # SRA
+# SLTI esperado 0
+#mem.write32(0, 0x00A0A593)
+#cpu.step()
+#print(f"x11 (SLTI)  = {cpu.regs[11]}")
 
-# SLT / SLTU
-mem.write32(32, 0x0020A533)  # SLT
-mem.write32(36, 0x0020B5B3)  # SLTU
+# SLTIU esperado 0
+#mem.write32(0, 0x00A0B593)
+#cpu.step()
+#print(f"x11 (SLTIU) = {cpu.regs[11]}")
 
-# I-Type
-mem.write32(40, 0x00A0C613)  # XORI
-mem.write32(44, 0x00A0E693)  # ORI
-mem.write32(48, 0x00A0F713)  # ANDI
+# SLLI esperado X
+#mem.write32(0, 0x00109193)
+#cpu.step()
+#print(f"x3  (SLLI)  = {cpu.regs[3]}")
 
-# LOAD e STORE
-mem.write32(52, 0x0050A023)  # SW
-mem.write32(56, 0x0000A183)  # LW 
+# SRLI esperado X
+#mem.write32(0, 0x0010D193)
+#cpu.step()
+#print(f"x3  (SRLI)  = {cpu.regs[3]}")
 
-# Executa as instruções
-for _ in range(15):
-    cpu.step()
+# SRAI esperado X
+#mem.write32(0, 0x4010D193)
+#cpu.step()
+#print(f"x3  (SRAI)  = {cpu.regs[3]}")
 
-# Resultado
+# ===============================
+# B-TYPE (BRANCHES)
+# ===============================
 
-print("\n=== RESULTADOS ===")
-print(f"x3  (ADD)   = {cpu.regs[3]}")
-print(f"x4  (SUB)   = {cpu.regs[4]}")
-print(f"x5  (AND)   = {cpu.regs[5]}")
-print(f"x6  (OR)    = {cpu.regs[6]}")
-print(f"x7  (XOR)   = {cpu.regs[7]}")
-print(f"x8  (SLL)   = {cpu.regs[8]}")
-print(f"x9  (SRL)   = {cpu.regs[9]}")
-print(f"x10 (SRA)   = {cpu.regs[10]}")
-print(f"x11 (SLT)   = {cpu.regs[11]}")
-print(f"x12 (SLTU)  = {cpu.regs[12]}")
-print(f"x13 (XORI)  = {cpu.regs[13]}")
-print(f"x14 (ORI)   = {cpu.regs[14]}")
-print(f"x15 (ANDI)  = {cpu.regs[15]}")
-print(f"x5 LOAD     = {cpu.regs[5]}  (após SW/LW)")
-"""
+# BEQ (não pula)
+#mem.write32(0, 0x00208663)
+#cpu.step()
 
-# """
+# BNE (pula)
+#mem.write32(0, 0x00209663)
+#cpu.step()
+
+# BLT (não pula)
+#mem.write32(0, 0x0020C663)
+#cpu.step()
+
+# BGE (pula)
+#mem.write32(0, 0x0020D663)
+#cpu.step()
+
+# BLTU (não pula)
+#mem.write32(0, 0x0020E663)
+#cpu.step()
+
+# BGEU (pula)
+#mem.write32(0, 0x0020F663)
+#cpu.step()
+
+# ===============================
+# J-TYPE
+# ===============================
+
+# JAL esperado alterar PC
+#mem.write32(0, 0x004000EF)
+#cpu.step()
+#print(f"x1  (JAL)   = {cpu.regs[1]}")
+
+# JALR esperado alterar PC
+#mem.write32(0, 0x000080E7)
+#cpu.step()
+#print(f"x1  (JALR)  = {cpu.regs[1]}")
+
+# ===============================
+# LOAD
+# ===============================
+
+# LB 
+#mem.write32(0, 0x0000A083)
+#cpu.step()
+#print(f"x1  (LB)    = {cpu.regs[1]}")
+
+# LH 
+#mem.write32(0, 0x0000A103)
+#cpu.step()
+#print(f"x2  (LH)    = {cpu.regs[2]}")
+
+# LW 
+#mem.write32(0, 0x0000A183)
+#cpu.step()
+#print(f"x3  (LW)    = {cpu.regs[3]}")
+
+# LBU 
+#mem.write32(0, 0x0000A203)
+#cpu.step()
+#print(f"x4  (LBU)   = {cpu.regs[4]}")
+
+# LHU 
+#mem.write32(0, 0x0000A303)
+#cpu.step()
+#print(f"x5  (LHU)   = {cpu.regs[5]}")
+
+# ===============================
+# STORE
+# ===============================
+
+# SB 
+#mem.write32(0, 0x0010A023)
+#cpu.step()
+
+# SH 
+#mem.write32(0, 0x0020A023)
+#cpu.step()
+
+# SW 
+#mem.write32(0, 0x0030A023)
+#cpu.step()

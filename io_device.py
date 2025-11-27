@@ -5,9 +5,5 @@ class Io:
             print(chr(value & 0xFF), end="")
             return
 
-        # outros futuros: teclado, timer...
-        print(f"[WARN] IO write desconhecido: {address:08X}")
 
-    def read(self, address: int):
-        
-        return 0
+    
