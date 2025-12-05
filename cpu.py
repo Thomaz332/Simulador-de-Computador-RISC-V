@@ -33,7 +33,7 @@ class CPU:
                 ptr += 1
 
     # =================================================================
-    # DECODIFICAÇÃO COMPLETA RV32I
+    # DECODIFICAÇÃO COMPLETA 
     # =================================================================
     def decode_and_execute(self, instr):
 
@@ -249,5 +249,3 @@ class CPU:
         self.pc = pc_next
         print(f"[WARN] Instrução desconhecida 0x{instr:08X}")
 
-    def write_terminal(self, addr, value):
-        self.bus.write(addr, value)
