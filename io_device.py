@@ -5,5 +5,9 @@ class Io:
             print(chr(value & 0xFF), end="")
             return
 
+    def read(self, address: int):
+        
+        return 0
+
 
     
