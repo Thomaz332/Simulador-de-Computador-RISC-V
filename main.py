@@ -30,7 +30,6 @@ print("14 - SB")
 print("15 - SH")
 print("16 - SW")
 print("17 - HELLO WORLD (IO)")
-print("0 - SAIR")
 
 op = int(input("\nEscolha um teste: "))
 
